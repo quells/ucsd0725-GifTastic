@@ -14,7 +14,6 @@ var App = function(searchOutlet, savedSearchesOutlet, resultsOutlet) {
     });
 
     this.savedSearchesOutlet = savedSearchesOutlet;
-    this.savedSearches = new Array();
 
     this.displayImages = function(size) {
         return function(response) {
@@ -68,10 +67,24 @@ var App = function(searchOutlet, savedSearchesOutlet, resultsOutlet) {
         var query = self.searchInput.val();
         self.resetDisplay();
         $("#resultsTitle").text("Results for '" + query + "'");
-        new GiphyRequest().search(query).limit(18).get(self.displayImages("fixedWidth"));
+        var searchRequest = new GiphyRequest().search(query).limit(18)
+        self.addSavedSearch(query.trim(), searchRequest);
+        searchRequest.get(self.displayImages("fixedWidth"));
     };
+
+    this.addSavedSearch = function(text, request) {
+        var item = $("<a href='#' class='dropdown-item'>").text(text);
+        item.data("request", request);
+        item.click(function() {
+            self.resetDisplay();
+            $(this).data("request").get(self.displayImages("fixedWidth"));
+        });
+        self.savedSearchesOutlet.append(item);
+    }
 
     this.resultsOutlet = resultsOutlet;
     $("#resultsTitle").text("Trending");
-    new GiphyRequest().trending().limit(18).get(self.displayImages("fixedWidth"));
+    var trendingRequest = new GiphyRequest().trending().limit(18);
+    self.addSavedSearch("Trending", trendingRequest);
+    trendingRequest.get(self.displayImages("fixedWidth"));
 };
