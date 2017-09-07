@@ -30,10 +30,8 @@ var GiphyRequest = function() {
 
     function GiphyGet(callback) {
         var url = DeObfuscate(this.url);
-        delete this.url;
         delete this.limit;
         delete this.offset;
-        delete this.get;
         var self = this;
         $.get(url, function(response) {
             callback(new GiphyResponse(self.query, response));
