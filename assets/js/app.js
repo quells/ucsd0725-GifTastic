@@ -41,6 +41,8 @@ var App = function(searchOutlet, savedSearchesOutlet, resultsOutlet) {
                 var imgEl = $("<img class='m-1 imgResult'>")
                             .attr({
                                 "src": img[size].url,
+                                "width": img[size].width,
+                                "height": img[size].height,
                                 "data-toggle": "modal",
                                 "data-target": "#originalModal"
                             })
