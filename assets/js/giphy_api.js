@@ -45,7 +45,7 @@ var GiphyRequest = function() {
         delete this.byID;
         delete this.trending;
 
-        q = q.split(" ").join("+");
+        q = q.trim().split(" ").join("+");
         this.query = q;
         this.url += "/v1/gifs/search";
         this.url += "?api_key=" + DeObfuscate(this.key);
