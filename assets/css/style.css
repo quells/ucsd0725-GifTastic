@@ -1,2 +1,27 @@
 #originalImage { width: 100%; }
-.imgResult { cursor: pointer; }
+#originalSlug { text-align: center; }
+
+.imgResult {
+    display: inline-flex;
+    position: relative;
+    cursor: pointer;
+}
+
+.imgResult img {
+    display: block;
+    position: absolute;
+}
+
+.rating {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: #fff;
+}
+
+.rating.r {
+    top: 0;
+    padding-top: 2em;
+    background-color: #000;
+}

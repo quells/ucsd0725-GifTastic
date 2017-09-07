@@ -14,6 +14,7 @@ var App = function(searchOutlet, savedSearchesOutlet, resultsOutlet) {
     });
 
     this.savedSearchesOutlet = savedSearchesOutlet;
+    this.resultsOutlet = resultsOutlet;
 
     this.displayImages = function(size) {
         return function(response) {
@@ -37,20 +38,34 @@ var App = function(searchOutlet, savedSearchesOutlet, resultsOutlet) {
 
             for (var i = 0; i < response.images.length; i++) {
                 var img = response.images[i];
-                var imgEl = $("<img class='m-1 imgResult'>")
-                            .attr({
-                                "src": img[size].url,
-                                "width": img[size].width,
-                                "height": img[size].height,
-                                "data-toggle": "modal",
-                                "data-target": "#originalModal"
-                            })
-                            .data("saved", img)
-                            .appendTo(self.resultsOutlet);
-                imgEl.click(function() {
-                    var originalURL = $(this).data("saved").original.url;
-                    $("#originalImage").attr("src", originalURL);
+
+                var imgWrapper = $("<div class='m-1 imgResult'>").css({
+                    "width": img[size].width,
+                    "height": img[size].height
+                })
+                .attr({
+                    "data-toggle": "modal",
+                    "data-target": "#originalModal"
+                })
+                .data("saved", img)
+                .appendTo(self.resultsOutlet);
+
+                imgWrapper.click(function() {
+                    var data = $(this).data("saved");
+                    $("#originalImage").attr("src", data.original.url);
+                    $("#originalSlug").text(data.slug);
                 });
+
+                var imgEl = $("<img>").attr({
+                    "src": img[size].url,
+                    "width": img[size].width,
+                    "height": img[size].height
+                })
+                .appendTo(imgWrapper);
+
+                $("<span class='rating'>").addClass(img.rating)
+                                          .text("Rated " + img.rating.toUpperCase())
+                                          .appendTo(imgWrapper);
             }
         }
     };
@@ -82,7 +97,6 @@ var App = function(searchOutlet, savedSearchesOutlet, resultsOutlet) {
         self.savedSearchesOutlet.append(item);
     }
 
-    this.resultsOutlet = resultsOutlet;
     $("#resultsTitle").text("Trending");
     var trendingRequest = new GiphyRequest().trending().limit(18);
     self.addSavedSearch("Trending", trendingRequest);
