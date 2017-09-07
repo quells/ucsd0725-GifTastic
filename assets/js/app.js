@@ -25,9 +25,17 @@ var App = function(searchOutlet, savedSearchesOutlet, resultsOutlet) {
             for (var i = 0; i < response.images.length; i++) {
                 var img = response.images[i];
                 var imgEl = $("<img class='m-1 imgResult'>")
-                            .attr("src", img[size].url)
+                            .attr({
+                                "src": img[size].url,
+                                "data-toggle": "modal",
+                                "data-target": "#originalModal"
+                            })
                             .data("saved", img)
                             .appendTo(self.resultsOutlet);
+                imgEl.click(function() {
+                    var originalURL = $(this).data("saved").original.url;
+                    $("#originalImage").attr("src", originalURL);
+                })
             }
         }
     };
