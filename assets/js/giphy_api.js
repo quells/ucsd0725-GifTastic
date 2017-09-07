@@ -102,11 +102,11 @@ var GiphyResponse = function(query, json) {
 
     switch (json.meta.status) {
         case 200: break;
-        case 400: throw new Error("GiphyAPI: Bad Request");
-        case 403: throw new Error("GiphyAPI: Forbidden");
-        case 404: throw new Error("GiphyAPI: NotFound");
-        case 429: throw new Error("GiphyAPI: Too Many Requests");
-        default:  throw new Error("GiphyResponse: Unhandled Status Code " + json.meta.status);
+        case 400: return new Error("GiphyAPI: Bad Request");
+        case 403: return new Error("GiphyAPI: Forbidden");
+        case 404: return new Error("GiphyAPI: NotFound");
+        case 429: return new Error("GiphyAPI: Too Many Requests");
+        default:  return new Error("GiphyResponse: Unhandled Status Code " + json.meta.status);
     }
 
     if (json.pagination) {
