@@ -16,23 +16,30 @@ var App = function(searchOutlet, savedSearchesOutlet, resultsOutlet) {
     this.savedSearchesOutlet = savedSearchesOutlet;
     this.savedSearches = new Array();
 
-    this.resultsOutlet = resultsOutlet;
-    this.resultsTitle = $("<h3>").text("Trending").appendTo(this.resultsOutlet);
-    var trending = new GiphyRequest().trending().get(function(response) {
-        if (response instanceof Error) {
-            self.resultsTitle.text(response.message);
-            return;
+    this.displayImages = function(size) {
+        return function(response) {
+            if (response instanceof Error) {
+                self.resultsTitle.text(response.message);
+                return;
+            }
+            for (var i = 0; i < response.images.length; i++) {
+                var img = response.images[i];
+                var imgEl = $("<img class='m-1 imgResult'>")
+                            .attr("src", img[size].url)
+                            .data("saved", img)
+                            .appendTo(self.resultsOutlet);
+            }
         }
-        for (var i = 0; i < response.images.length; i++) {
-            var img = response.images[i];
-            $("<img class='m-1'>").attr("src", img.fixedWidth.url)
-                                  .data("saved", img)
-                                  .appendTo(self.resultsOutlet);
-        }
-    });
+    };
 
     this.handleSearch = function() {
         var query = self.searchInput.val();
-        console.log(query);
+        self.resultsTitle.text("Results for '" + query + "'");
+        $(".imgResult").remove();
+        new GiphyRequest().search(query).get(self.displayImages("fixedWidth"));
     };
+
+    this.resultsOutlet = resultsOutlet;
+    this.resultsTitle = $("<h3>").text("Trending").appendTo(this.resultsOutlet);
+    new GiphyRequest().trending().get(self.displayImages("fixedWidth"));
 };
