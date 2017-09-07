@@ -110,7 +110,7 @@ var GiphyResponse = function(query, json) {
     }
 
     if (json.pagination) {
-        var nextPageOffset = json.pagination.offset + json.pagination.count;
+        var nextPageOffset = json.pagination.offset + json.pagination.count + 1;
         if (query.length > 0) {
             this.nextPage = new GiphyRequest().search(query);
         } else {
@@ -118,8 +118,8 @@ var GiphyResponse = function(query, json) {
         }
         this.nextPage.limit(json.pagination.count).offset(nextPageOffset);
 
-        if (json.pagination.offset > json.pagination.count) {
-            var prevPageOffset = json.pagination.offset - json.pagination.count;
+        if (json.pagination.offset >= json.pagination.count) {
+            var prevPageOffset = json.pagination.offset - json.pagination.count - 1;
             if (query.length > 0) {
                 this.prevPage = new GiphyRequest().search(query);
             } else {
