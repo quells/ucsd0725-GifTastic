@@ -1,27 +1,43 @@
+/*
+GIPHY Brand Colors
+Green:  #22ff87
+Cyan:   #18c1ff
+Purple: #8500fe
+Red:    #fd4d53
+Yellow: #fef34b
+*/
+
+body {
+    background: #0f0f0f;
+    color: #fff;
+}
+
 #originalImage { width: 100%; }
-#originalSlug { text-align: center; }
+#originalSlug { text-align: center; color: #000; }
 
 .imgResult {
     display: inline-flex;
     position: relative;
-    cursor: pointer;
 }
 
 .imgResult img {
     display: block;
     position: absolute;
+    cursor: pointer;
+}
+
+.metadata {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    background-color: #fff;
+    color: #000;
 }
 
 .rating {
-    position: absolute;
-    left: 0; right: 0; bottom: 0;
-    text-align: center;
-    background-color: rgba(0, 0, 0, 0.6);
-    color: #fff;
+    float: left;
+    margin-left: 4px;
 }
 
-.rating.r {
-    top: 0;
-    padding-top: 2em;
-    background-color: #000;
+img.resize {
+    right: 4px; bottom: 4px;
 }
