@@ -7,6 +7,25 @@ Red:    #fd4d53
 Yellow: #fef34b
 */
 
+.btn-primary {
+    background-color: #18c1ff;
+    border-color: #18c1ff;
+}
+.btn-primary:hover, .btn-primary:active, .btn-primary:focus {
+    background-color: #00afed;
+    border-color: #00a8e1;
+}
+
+.btn-secondary {
+    background-color: #8500fe;
+    border-color: #8500fe;
+}
+.btn-secondary:hover, .btn-secondary:active, .btn-secondary:focus,
+.show .btn-secondary.dropdown-toggle {
+    background-color: #7200ec;
+    border-color: #6B00f7;
+}
+
 body {
     background: #0f0f0f;
     color: #fff;
