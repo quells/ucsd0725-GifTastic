@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+        <link rel="stylesheet" href="assets/css/style.css">
+        <title>GifTastic</title>
+    </head>
+    <body>
+        <div class="container-fluid">
+            <canvas id="hero-canvas">
+                GifTastic
+            </canvas>
+        </div>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha384-xBuQ/xzmlsLoJpyjoggmTEz8OWUFM0/RC5BsqQBDX2v5cMvDHcMakNTNrHIW2I5f" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+        function GetTitleBitmap(w, h, fontSize, title) {
+            var canvas = $("<canvas>").attr({width: w, height: h})[0];
+            var ctx = canvas.getContext("2d");
+            ctx.fillStyle = "#fff";
+            ctx.textAlign = "center";
+            ctx.font = fontSize + "px Arial Black";
+            ctx.fillText(title, w/2, Math.floor(h/2 + fontSize*2/5));
+            var imgData = ctx.getImageData(0, 0, w, h);
+            var bitmap = new Uint8Array(imgData.width * imgData.height);
+            for (var i = 0; i < bitmap.length; i++) {
+                bitmap[i] = imgData.data[4*i+3];
+            }
+            return bitmap;
+        }
+
+        function DrawBitmap(bitmap, w, h, size, threshold) {
+            var canvas = $("<canvas>").attr({width: w*size, height: h*size})[0];
+            var ctx = canvas.getContext("2d");
+            ctx.fillStyle = "#fff"
+            var x, y;
+            for (var i = 0; i < bitmap.length; i++) {
+                if (bitmap[i] > threshold) {
+                    x = i % w;
+                    y = Math.floor(i / w);
+                    ctx.fillRect(x*size, y*size, size, size);
+                }
+            }
+            return canvas;
+        }
+
+        var title = GetTitleBitmap(90, 20, 14, "GIFTASTIC");
+        var titleMap = DrawBitmap(title, 90, 20, 10, 128);
+
+        function DrawTitle(ctx) {
+            ctx.drawImage(titleMap, 0, 0);
+        }
+
+        // Update heroCanvas size
+        var heroCanvas = $("#hero-canvas")[0];
+        heroCanvas.width = heroCanvas.clientWidth;
+        heroCanvas.height = heroCanvas.clientHeight;
+        var heroContext = heroCanvas.getContext("2d");
+        DrawTitle(heroContext);
+
+        var lastResize = Date.now();
+        var resizeTimeout = 0;
+        var resizeInterval = 500;
+        $(window).resize(function() {
+            resizeTimeout = setTimeout(function() {
+                if (Date.now() - lastResize < resizeInterval) { return; }
+                lastResize = Date.now();
+                // Update heroCanvas size
+                heroCanvas.width = heroCanvas.clientWidth;
+                DrawTitle(heroContext);
+            }, resizeInterval);
+            if (Date.now() - lastResize < resizeInterval) {
+                clearTimeout(resizeTimeout);
+            }
+        });
+    </script>
+    </body>
+</html>
