@@ -16,7 +16,77 @@
 
     <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha384-xBuQ/xzmlsLoJpyjoggmTEz8OWUFM0/RC5BsqQBDX2v5cMvDHcMakNTNrHIW2I5f" crossorigin="anonymous"></script>
     <script type="text/javascript">
-        function GetTitleBitmap(w, h, fontSize, title) {
+        var Perlin = function(nx, ny, nz) {
+            // Adapted from work done by Ken Perlin
+            // http://mrl.nyu.edu/~perlin/noise/
+            // and available on Wikipedia as of 2017-09-12
+            // https://en.wikipedia.org/wiki/Perlin_noise
+
+            this.seed = function(nx, ny, nz) {
+                var gradients = new Array();
+                var dx, dy, dz, theta, u;
+                for (var x = 0; x < nx; x++) {
+                    var grid = new Array();
+                    for (var y = 0; y < ny; y++) {
+                        var row = new Array();
+                        for (var z = 0; z < nz; z++) {
+                            // Method for choosing points on the surface of a sphere
+                            // http://mathworld.wolfram.com/SpherePointPicking.html
+                            theta = 2 * Math.PI * Math.random();
+                            u = 2 * Math.random() - 1;
+                            dx = Math.sqrt(1 - u*u) * Math.cos(theta);
+                            dy = Math.sqrt(1 - u*u) * Math.sin(theta);
+                            // dz = u;
+                            row.push([dx, dy, u]);
+                        }
+                        grid.push(row);
+                    }
+                    gradients.push(grid);
+                }
+                this.gradients = gradients;
+            };
+            this.seed(nx, ny, nz);
+
+            this.noise = function(x, y, z) {
+                var self = this;
+                var lerp = function(a, b, t) { return a + t*(b - a); };
+                var getGradient = function(ix, iy, iz, x, y, z) {
+                    ix %= self.gradients.length;       x %= self.gradients.length;
+                    iy %= self.gradients[0].length;    y %= self.gradients[0].length;
+                    iz %= self.gradients[0][0].length; z %= self.gradients[0][0].length;
+                    var dx = x - ix; var dy = y - iy; var dz = z - iz;
+                    var g = dx*self.gradients[ix][iy][iz][0];
+                    g +=    dy*self.gradients[ix][iy][iz][1];
+                    g +=    dz*self.gradients[ix][iy][iz][2];
+                    return g;
+                }
+                // 2002 version
+                var fade = function(t) { return t*t*t * (t * (6*t - 15) + 10); };
+                // Original version
+                // var fade = function(t) { return 3*t*t - 2*t*t*t; };
+                var x0 = Math.floor(x); var x1 = x0 + 1;
+                var y0 = Math.floor(y); var y1 = y0 + 1;
+                var z0 = Math.floor(z); var z1 = z0 + 1;
+
+                var sx = fade(x - x0); var sy = fade(y - y0); var sz = fade(z - z0);
+
+                var a0 = lerp(getGradient(x0, y0, z0, x, y, z), getGradient(x1, y0, z0, x, y, z), sx);
+                var a1 = lerp(getGradient(x0, y0, z1, x, y, z), getGradient(x1, y0, z1, x, y, z), sx);
+                var a = lerp(a0, a1, sy);
+
+                var b0 = lerp(getGradient(x0, y0, z0, x, y, z), getGradient(x0, y1, z0, x, y, z), sx);
+                var b1 = lerp(getGradient(x0, y0, z1, x, y, z), getGradient(x0, y1, z1, x, y, z), sx);
+                var b = lerp(b0, b1, sy);
+
+                return lerp(a, b, sz);
+            };
+
+            this.noiseByte = function(x, y, z) {
+                return Math.floor(128 * (this.noise(x, y, z) + 1));
+            }
+        };
+
+        function GetTitleBitmap(w, h, fontSize, title, threshold) {
             var canvas = $("<canvas>").attr({width: w, height: h})[0];
             var ctx = canvas.getContext("2d");
             ctx.fillStyle = "#fff";
