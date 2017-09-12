@@ -89,35 +89,79 @@
         function GetTitleBitmap(w, h, fontSize, title, threshold) {
             var canvas = $("<canvas>").attr({width: w, height: h})[0];
             var ctx = canvas.getContext("2d");
+
             ctx.fillStyle = "#fff";
             ctx.textAlign = "center";
             ctx.font = fontSize + "px Arial Black";
             ctx.fillText(title, w/2, Math.floor(h/2 + fontSize*2/5));
-            var imgData = ctx.getImageData(0, 0, w, h);
-            var bitmap = new Uint8Array(imgData.width * imgData.height);
-            for (var i = 0; i < bitmap.length; i++) {
-                bitmap[i] = imgData.data[4*i+3];
-            }
-            return bitmap;
-        }
 
-        function DrawBitmap(bitmap, w, h, size, threshold) {
-            var canvas = $("<canvas>").attr({width: w*size, height: h*size})[0];
-            var ctx = canvas.getContext("2d");
-            ctx.fillStyle = "#fff"
-            var x, y;
-            for (var i = 0; i < bitmap.length; i++) {
-                if (bitmap[i] > threshold) {
-                    x = i % w;
-                    y = Math.floor(i / w);
-                    ctx.fillRect(x*size, y*size, size, size);
+            var imgData = ctx.getImageData(0, 0, w, h);
+            for (var i = 0; i < imgData.data.length; i += 4) {
+                if (imgData.data[i+3] > threshold) {
+                    imgData.data[i] = 255;
+                    imgData.data[i+1] = 255;
+                    imgData.data[i+2] = 255;
+                    imgData.data[i+3] = 255;
+                } else {
+                    imgData.data[i] = 255;
+                    imgData.data[i+1] = 255;
+                    imgData.data[i+2] = 255;
+                    imgData.data[i+3] = 0;
                 }
             }
+            ctx.putImageData(imgData, 0, 0);
             return canvas;
         }
 
-        var title = GetTitleBitmap(90, 20, 14, "GIFTASTIC");
-        var titleMap = DrawBitmap(title, 90, 20, 10, 128);
+        function UpscaleCanvas(canvasIn, scale) {
+            var ctxIn = canvasIn.getContext("2d");
+
+            var src = ctxIn.getImageData(0, 0, canvasIn.width, canvasIn.height);
+            var dest = {width: canvasIn.width*scale, height: canvasIn.height*scale};
+            dest.data = new Array(dest.width * dest.height * 4);
+
+            var idx1, idx2, x, y, oy;
+            for (var j = 0; j < canvasIn.height; j++) {
+                oy = j*canvasIn.width;
+                y = scale*j;
+                for (var i = 0; i < canvasIn.width; i++) {
+                    idx1 = (i + oy) * 4;
+                    x = scale*i;
+                    for (var dy = 0; dy < scale; dy++) {
+                        for (var dx = 0; dx < scale; dx++) {
+                            idx2 = (x+dx + (y+dy)*canvasIn.width*scale) * 4;
+                            dest.data[idx2]   = src.data[idx1];
+                            dest.data[idx2+1] = src.data[idx1+1];
+                            dest.data[idx2+2] = src.data[idx1+2];
+                            dest.data[idx2+3] = src.data[idx1+3];
+                        }
+                    }
+                }
+            }
+
+            var canvasOut = $("<canvas>")[0];
+            canvasOut.width = dest.width;
+            canvasOut.height = dest.height;
+            var ctxOut = canvasOut.getContext("2d");
+
+            ctxOut.drawImage(canvasIn, 0, 0);
+            var src2 = ctxOut.getImageData(0, 0, dest.width, dest.height);
+            var idx;
+            for (var j = 0; j < dest.height; j++) {
+                for (var i = 0; i < dest.width; i++) {
+                    idx = (i + j*dest.width) * 4;
+                    src2.data[idx] = dest.data[idx];
+                    src2.data[idx+1] = dest.data[idx+1];
+                    src2.data[idx+2] = dest.data[idx+2];
+                    src2.data[idx+3] = dest.data[idx+3];
+                }
+            }
+            ctxOut.putImageData(src2, 0, 0);
+
+            return canvasOut;
+        }
+
+        var title = UpscaleCanvas(GetTitleBitmap(90, 20, 14, "GIFTASTIC", 128), 10);
 
         function DrawTitle(ctx) {
             ctx.fillStyle = "#fd4d53"; ctx.fillRect(60, 0, 20, 200);
@@ -125,8 +169,17 @@
             ctx.fillStyle = "#22ff87"; ctx.fillRect(100, 0, 20, 200);
             ctx.fillStyle = "#18c1ff"; ctx.fillRect(120, 0, 20, 200);
             ctx.fillStyle = "#8500fe"; ctx.fillRect(140, 0, 20, 200);
-            ctx.drawImage(titleMap, 0, 0);
+            ctx.drawImage(title, 0, 0);
         }
+
+        // Initialize Perlin Noise
+        // var P = new Perlin(3, 2, 10);
+        // var values = new Array();
+        // for (var y = 0; y < 2; y += 0.1) {
+        //     for (var x = 0; x < 3; x += 0.1) {
+        //         values.push(P.noiseByte(x, y, 0));
+        //     }
+        // }
 
         // Update heroCanvas size
         var heroCanvas = $("#hero-canvas")[0];
@@ -137,7 +190,7 @@
 
         var lastResize = Date.now();
         var resizeTimeout = 0;
-        var resizeInterval = 500;
+        var resizeInterval = 250;
         $(window).resize(function() {
             resizeTimeout = setTimeout(function() {
                 if (Date.now() - lastResize < resizeInterval) { return; }
