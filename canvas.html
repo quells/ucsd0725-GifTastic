@@ -25,11 +25,11 @@
             this.seed = function(nx, ny, nz) {
                 var gradients = new Array();
                 var dx, dy, dz, theta, u;
-                for (var x = 0; x < nx; x++) {
+                for (var x = 0; x <= nx; x++) {
                     var grid = new Array();
-                    for (var y = 0; y < ny; y++) {
+                    for (var y = 0; y <= ny; y++) {
                         var row = new Array();
-                        for (var z = 0; z < nz; z++) {
+                        for (var z = 0; z <= nz; z++) {
                             // Method for choosing points on the surface of a sphere
                             // http://mathworld.wolfram.com/SpherePointPicking.html
                             theta = 2 * Math.PI * Math.random();
@@ -51,11 +51,13 @@
                 var self = this;
                 var lerp = function(a, b, t) { return a + t*(b - a); };
                 var getGradient = function(ix, iy, iz, x, y, z) {
-                    ix %= self.gradients.length;       x %= self.gradients.length;
-                    iy %= self.gradients[0].length;    y %= self.gradients[0].length;
-                    iz %= self.gradients[0][0].length; z %= self.gradients[0][0].length;
                     var dx = x - ix; var dy = y - iy; var dz = z - iz;
-                    var g = dx*self.gradients[ix][iy][iz][0];
+                    try {
+                        var g = lerp(self.gradients[ix][iy][iz][0], self.gradients[ix+1][iy][iz][0], dx);
+
+                    } catch (e) {
+                        console.log(ix, iy, iz)
+                    }
                     g +=    dy*self.gradients[ix][iy][iz][1];
                     g +=    dz*self.gradients[ix][iy][iz][2];
                     return g;
@@ -64,6 +66,10 @@
                 var fade = function(t) { return t*t*t * (t * (6*t - 15) + 10); };
                 // Original version
                 // var fade = function(t) { return 3*t*t - 2*t*t*t; };
+
+                // x = x % self.gradients.length;
+                // y = y % self.gradients[0].length;
+                // z = z % self.gradients[0][0].length;
                 var x0 = Math.floor(x); var x1 = x0 + 1;
                 var y0 = Math.floor(y); var y1 = y0 + 1;
                 var z0 = Math.floor(z); var z1 = z0 + 1;
@@ -161,19 +167,30 @@
             return canvasOut;
         }
 
-        var title = UpscaleCanvas(GetTitleBitmap(90, 20, 14, "GIFTASTIC", 128), 10);
-
-        function DrawTitle(ctx) {
-            ctx.fillStyle = "#fd4d53"; ctx.fillRect(60, 0, 20, 200);
-            ctx.fillStyle = "#fef34b"; ctx.fillRect(80, 0, 20, 200);
-            ctx.fillStyle = "#22ff87"; ctx.fillRect(100, 0, 20, 200);
-            ctx.fillStyle = "#18c1ff"; ctx.fillRect(120, 0, 20, 200);
-            ctx.fillStyle = "#8500fe"; ctx.fillRect(140, 0, 20, 200);
-            ctx.drawImage(title, 0, 0);
+        function DrawPerlin(p, t, w, h, scale) {
+            var s = scale;
+            t *= s;
+            var canvas = $("<canvas>").attr({width: w, height: h})[0];
+            var ctx = canvas.getContext("2d");
+            var imgData = ctx.getImageData(0, 0, w, h);
+            var J, idx, color;
+            for (var j = 0; j < h; j++) {
+                J = j*s;
+                for (var i = 0; i < w; i++) {
+                    idx = (i + j*w) * 4;
+                    color = p.noiseByte(i*s, J, t)
+                    imgData.data[idx] = color;
+                    imgData.data[idx+1] = color;
+                    imgData.data[idx+2] = color;
+                    imgData.data[idx+3] = 255;
+                }
+            }
+            ctx.putImageData(imgData, 0, 0);
+            return canvas;
         }
 
         // Initialize Perlin Noise
-        // var P = new Perlin(3, 2, 10);
+        var P = new Perlin(100, 100, 100);
         // var values = new Array();
         // for (var y = 0; y < 2; y += 0.1) {
         //     for (var x = 0; x < 3; x += 0.1) {
@@ -181,12 +198,37 @@
         //     }
         // }
 
+        // var title = UpscaleCanvas(GetTitleBitmap(90, 20, 14, "GIFTASTIC", 128), 10);
+
+        function DrawTitle(canvas, t) {
+            var ctx = canvas.getContext("2d");
+            // ctx.fillStyle = "#fd4d53"; ctx.fillRect(60, 0, 20, 200);
+            // ctx.fillStyle = "#fef34b"; ctx.fillRect(80, 0, 20, 200);
+            // ctx.fillStyle = "#22ff87"; ctx.fillRect(100, 0, 20, 200);
+            // ctx.fillStyle = "#18c1ff"; ctx.fillRect(120, 0, 20, 200);
+            // ctx.fillStyle = "#8500fe"; ctx.fillRect(140, 0, 20, 200);
+            // ctx.drawImage(title, 0, 0);
+            var pNoise = DrawPerlin(P, t, 100, 100, 1);
+            // var pImg = UpscaleCanvas(pNoise, 10);
+            ctx.drawImage(pNoise, 0, 0);
+        }
+
+
         // Update heroCanvas size
         var heroCanvas = $("#hero-canvas")[0];
         heroCanvas.width = heroCanvas.clientWidth;
         heroCanvas.height = heroCanvas.clientHeight;
         var heroContext = heroCanvas.getContext("2d");
-        DrawTitle(heroContext);
+        var t = 0;
+        function DrawLoop() {
+            heroContext.clearRect(0, 0, heroCanvas.width, heroCanvas.height);
+            DrawTitle(heroCanvas, t);
+            t += 0.1;
+            // if (t < 100) {
+            //     requestAnimationFrame(DrawLoop);
+            // }
+        };
+        DrawLoop();
 
         var lastResize = Date.now();
         var resizeTimeout = 0;
@@ -197,7 +239,7 @@
                 lastResize = Date.now();
                 // Update heroCanvas size
                 heroCanvas.width = heroCanvas.clientWidth;
-                DrawTitle(heroContext);
+                // DrawTitle(heroCanvas);
             }, resizeInterval);
             if (Date.now() - lastResize < resizeInterval) {
                 clearTimeout(resizeTimeout);
