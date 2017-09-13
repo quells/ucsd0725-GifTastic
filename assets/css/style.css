@@ -16,12 +16,13 @@ Yellow: #fef34b
     border-color: #00a8e1;
 }
 
-.btn-secondary {
+.btn-purple {
     background-color: #8500fe;
     border-color: #8500fe;
+    color: #fff;
 }
-.btn-secondary:hover, .btn-secondary:active, .btn-secondary:focus,
-.show .btn-secondary.dropdown-toggle {
+.btn-purple:hover, .btn-purple:active, .btn-purple:focus,
+.show .btn-purple.dropdown-toggle {
     background-color: #7200ec;
     border-color: #6B00f7;
 }
