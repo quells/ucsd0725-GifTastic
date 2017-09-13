@@ -1,23 +1,20 @@
-function GetTitleBitmap(w, h, fontSize, title, threshold) {
+function GetTitleBitmap(w, h, fontSize, color, title, threshold) {
     var canvas = $("<canvas>").attr({width: w, height: h})[0];
     var ctx = canvas.getContext("2d");
 
     ctx.fillStyle = "#fff";
     ctx.textAlign = "center";
-    ctx.font = fontSize + "px Arial Black";
+    ctx.font = fontSize + "px Roboto";
     ctx.fillText(title, w/2, Math.floor(h/2 + fontSize*2/5));
 
     var imgData = ctx.getImageData(0, 0, w, h);
     for (var i = 0; i < imgData.data.length; i += 4) {
+        imgData.data[i] = color;
+        imgData.data[i+1] = color;
+        imgData.data[i+2] = color;
         if (imgData.data[i+3] > threshold) {
-            imgData.data[i] = 255;
-            imgData.data[i+1] = 255;
-            imgData.data[i+2] = 255;
             imgData.data[i+3] = 255;
         } else {
-            imgData.data[i] = 255;
-            imgData.data[i+1] = 255;
-            imgData.data[i+2] = 255;
             imgData.data[i+3] = 0;
         }
     }
