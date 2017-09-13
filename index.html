@@ -9,7 +9,9 @@
     </head>
     <body>
         <div class="container-fluid">
-            <h1 class="text-center mt-3 mb-3">GifTastic</h1>
+            <canvas id="hero-canvas" class="mb-3">
+                GifTastic
+            </canvas>
 
             <div class="modal fade" id="originalModal" tabindex="-1" role="presentation" aria-hidden="true">
                 <div class="modal-dialog" role="document">
@@ -62,8 +64,68 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
     <script src="assets/js/giphy_api.js" charset="utf-8"></script>
     <script src="assets/js/app.js" charset="utf-8"></script>
+    <script src="assets/js/perlin.js" charset="utf-8"></script>
+    <script src="assets/js/bitmaps.js" charset="utf-8"></script>
     <script type="text/javascript">
         var app = new App($("#searchBar"), $("#savedSearches"), $("#results"));
+
+        var P = new Perlin();
+        var title;
+
+        // Update heroCanvas size
+        var heroCanvas = $("#hero-canvas")[0];
+        heroCanvas.width = heroCanvas.clientWidth;
+        heroCanvas.height = heroCanvas.clientHeight;
+        var heroContext = heroCanvas.getContext("2d");
+
+        function UpdateTitle() {
+            var windowWidth = $(window).width();
+            var fontsize = 14;
+            if (windowWidth < 900) { fontsize = 12; }
+            if (windowWidth < 750) { fontsize = 10; }
+            if (windowWidth < 650) { fontsize = 9; }
+            if (windowWidth < 600) { fontsize = 8; }
+            if (windowWidth < 500) { fontsize = 6; }
+            if (windowWidth < 380) { fontsize = 5; }
+            title = UpscaleCanvas(GetTitleBitmap(90, 20, fontsize, "GIFTASTIC", 128), 10);
+        };
+        UpdateTitle();
+
+        function DrawHeader(canvas, t) {
+            var ctx = canvas.getContext("2d");
+            var pImg = P.colorImage(Math.floor(canvas.width/10), Math.floor(canvas.height/10), 8, t);
+            ctx.drawImage(UpscaleCanvas(pImg, 10), 0, 0);
+            ctx.drawImage(title, Math.floor(Math.floor((canvas.width-title.width)*0.5)*0.1)*10, 0);
+        };
+
+        var t = 0;
+        var lastDrawTime = Date.now();
+        function DrawLoop() {
+            var delta = Date.now() - lastDrawTime;
+            heroContext.clearRect(0, 0, heroCanvas.width, heroCanvas.height);
+            DrawHeader(heroCanvas, t);
+            t += delta*0.001;
+            lastDrawTime += delta;
+            requestAnimationFrame(DrawLoop);
+        };
+        DrawLoop();
+
+        var lastResize = Date.now();
+        var resizeTimeout = 0;
+        var resizeInterval = 250;
+        $(window).resize(function() {
+            resizeTimeout = setTimeout(function() {
+                if (Date.now() - lastResize < resizeInterval) { return; }
+                lastResize = Date.now();
+                // Update heroCanvas size
+                heroCanvas.width = heroCanvas.clientWidth;
+                UpdateTitle();
+                DrawHeader(heroCanvas, t);
+            }, resizeInterval);
+            if (Date.now() - lastResize < resizeInterval) {
+                clearTimeout(resizeTimeout);
+            }
+        });
     </script>
     </body>
 </html>
