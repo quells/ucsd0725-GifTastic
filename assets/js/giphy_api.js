@@ -10,7 +10,7 @@ var GiphyDebug = false;
 
 var GiphyRequest = function() {
     this.key = "MTZmMGRkMjJkZjBmNGM1ODgzNDIxMmQ4NTQ0Y2JlZTg=";
-    this.url = "http://api.giphy.com";
+    this.url = "https://api.giphy.com";
 
     function GiphyLimit(l) {
         delete this.limit;
