@@ -102,6 +102,40 @@
                 ctx.putImageData(imgData, 0, 0);
                 return canvas;
             }
+
+            this.colorImage = function(w, h, scale, offset) {
+                var canvas = $("<canvas>").attr({width: w, height: h})[0];
+                var ctx = canvas.getContext("2d");
+                var imgData = ctx.getImageData(0, 0, w, h);
+                var s = 1/scale;
+                var x, y, c, ci, idx;
+                var cs = [
+                    [0xfd, 0x4d, 0x53],
+                    [0xfe, 0xf3, 0x4b],
+                    [0x22, 0xff, 0x87],
+                    [0x18, 0xc1, 0xff],
+                    [0x85, 0x00, 0xfe]
+                ]
+                for (var j = 0; j < h; j++) {
+                    y = j*s;
+                    for (var i = 0; i < w; i++) {
+                        x = i*s;
+                        c = this.noiseByte(x, y, offset);
+                        if (c > 224) { ci = cs[0]; }
+                        else if (c > 160) { ci = cs[1]; }
+                        else if (c > 96) { ci = cs[2]; }
+                        else if (c > 32) { ci = cs[3]; }
+                        else { ci = cs[4]; }
+                        idx = (i + j*w) * 4;
+                        imgData.data[idx]   = ci[0];
+                        imgData.data[idx+1] = ci[1];
+                        imgData.data[idx+2] = ci[2];
+                        imgData.data[idx+3] = 255;
+                    }
+                }
+                ctx.putImageData(imgData, 0, 0);
+                return canvas;
+            }
         }
 
         function GetTitleBitmap(w, h, fontSize, title, threshold) {
@@ -192,8 +226,9 @@
             // ctx.fillStyle = "#22ff87"; ctx.fillRect(100, 0, 20, 200);
             // ctx.fillStyle = "#18c1ff"; ctx.fillRect(120, 0, 20, 200);
             // ctx.fillStyle = "#8500fe"; ctx.fillRect(140, 0, 20, 200);
-            ctx.drawImage(P.image(canvas.width, canvas.height, 80, t), 0, 0);
-            ctx.drawImage(title, 0, 0);
+            var pImg = P.colorImage(Math.floor(canvas.width/10), Math.floor(canvas.height/10), 8, t);
+            ctx.drawImage(UpscaleCanvas(pImg, 10), 0, 0);
+            ctx.drawImage(title, Math.floor(Math.floor((canvas.width-title.width)*0.5)*0.1)*10, 0);
         }
 
 
@@ -203,10 +238,13 @@
         heroCanvas.height = heroCanvas.clientHeight;
         var heroContext = heroCanvas.getContext("2d");
         var t = 0;
+        var lastDrawTime = Date.now();
         function DrawLoop() {
+            var delta = Date.now() - lastDrawTime;
             heroContext.clearRect(0, 0, heroCanvas.width, heroCanvas.height);
             DrawTitle(heroCanvas, t);
-            t += 0.1;
+            t += delta*0.001;
+            lastDrawTime += delta;
             requestAnimationFrame(DrawLoop);
         };
         DrawLoop();
