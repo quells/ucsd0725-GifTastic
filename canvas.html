@@ -19,37 +19,43 @@
     <script src="assets/js/bitmaps.js" charset="utf-8"></script>
     <script type="text/javascript">
         var P = new Perlin();
-
-
-        var title = UpscaleCanvas(GetTitleBitmap(90, 20, 14, "GIFTASTIC", 128), 10);
-
-        function DrawTitle(canvas, t) {
-            var ctx = canvas.getContext("2d");
-            // ctx.fillStyle = "#fd4d53"; ctx.fillRect(60, 0, 20, 200);
-            // ctx.fillStyle = "#fef34b"; ctx.fillRect(80, 0, 20, 200);
-            // ctx.fillStyle = "#22ff87"; ctx.fillRect(100, 0, 20, 200);
-            // ctx.fillStyle = "#18c1ff"; ctx.fillRect(120, 0, 20, 200);
-            // ctx.fillStyle = "#8500fe"; ctx.fillRect(140, 0, 20, 200);
-            var pImg = P.colorImage(Math.floor(canvas.width/10), Math.floor(canvas.height/10), 8, t);
-            ctx.drawImage(UpscaleCanvas(pImg, 10), 0, 0);
-            ctx.drawImage(title, Math.floor(Math.floor((canvas.width-title.width)*0.5)*0.1)*10, 0);
-        }
-
+        var title;
 
         // Update heroCanvas size
         var heroCanvas = $("#hero-canvas")[0];
         heroCanvas.width = heroCanvas.clientWidth;
         heroCanvas.height = heroCanvas.clientHeight;
         var heroContext = heroCanvas.getContext("2d");
+
+        function UpdateTitle() {
+            var windowWidth = $(window).width();
+            var fontsize = 14;
+            if (windowWidth < 900) { fontsize = 12; }
+            if (windowWidth < 750) { fontsize = 10; }
+            if (windowWidth < 650) { fontsize = 9; }
+            if (windowWidth < 600) { fontsize = 8; }
+            if (windowWidth < 500) { fontsize = 6; }
+            if (windowWidth < 380) { fontsize = 5; }
+            title = UpscaleCanvas(GetTitleBitmap(90, 20, fontsize, "GIFTASTIC", 128), 10);
+        };
+        UpdateTitle();
+
+        function DrawHeader(canvas, t) {
+            var ctx = canvas.getContext("2d");
+            var pImg = P.colorImage(Math.floor(canvas.width/10), Math.floor(canvas.height/10), 8, t);
+            ctx.drawImage(UpscaleCanvas(pImg, 10), 0, 0);
+            ctx.drawImage(title, Math.floor(Math.floor((canvas.width-title.width)*0.5)*0.1)*10, 0);
+        };
+
         var t = 0;
         var lastDrawTime = Date.now();
         function DrawLoop() {
             var delta = Date.now() - lastDrawTime;
             heroContext.clearRect(0, 0, heroCanvas.width, heroCanvas.height);
-            DrawTitle(heroCanvas, t);
-            t += delta*0.001;
-            lastDrawTime += delta;
-            requestAnimationFrame(DrawLoop);
+            DrawHeader(heroCanvas, t);
+            // t += delta*0.001;
+            // lastDrawTime += delta;
+            // requestAnimationFrame(DrawLoop);
         };
         DrawLoop();
 
@@ -62,7 +68,8 @@
                 lastResize = Date.now();
                 // Update heroCanvas size
                 heroCanvas.width = heroCanvas.clientWidth;
-                DrawTitle(heroCanvas, t);
+                UpdateTitle();
+                DrawHeader(heroCanvas, t);
             }, resizeInterval);
             if (Date.now() - lastResize < resizeInterval) {
                 clearTimeout(resizeTimeout);
