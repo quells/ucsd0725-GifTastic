@@ -16,81 +16,93 @@
 
     <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha384-xBuQ/xzmlsLoJpyjoggmTEz8OWUFM0/RC5BsqQBDX2v5cMvDHcMakNTNrHIW2I5f" crossorigin="anonymous"></script>
     <script type="text/javascript">
-        var Perlin = function(nx, ny, nz) {
+        function Shuffle(arr) {
+            // Fisher-Yates (Knuth) Algorithm
+            var shuffled = arr.slice(0); // Copy by value
+            for (var i = arr.length-1; i > 0; i--) {
+                // 1 <= i <= n-1
+                var j = Math.floor(Math.random()*(i+1)); // 0 <= j <= i
+                // Swap i and j, copying by value
+                var temp = shuffled[i];
+                shuffled[i] = shuffled[j];
+                shuffled[j] = temp;
+            }
+            return shuffled;
+        }
+
+        var Perlin = function() {
             // Adapted from work done by Ken Perlin
             // http://mrl.nyu.edu/~perlin/noise/
-            // and available on Wikipedia as of 2017-09-12
-            // https://en.wikipedia.org/wiki/Perlin_noise
 
-            this.seed = function(nx, ny, nz) {
-                var gradients = new Array();
-                var dx, dy, dz, theta, u;
-                for (var x = 0; x <= nx; x++) {
-                    var grid = new Array();
-                    for (var y = 0; y <= ny; y++) {
-                        var row = new Array();
-                        for (var z = 0; z <= nz; z++) {
-                            // Method for choosing points on the surface of a sphere
-                            // http://mathworld.wolfram.com/SpherePointPicking.html
-                            theta = 2 * Math.PI * Math.random();
-                            u = 2 * Math.random() - 1;
-                            dx = Math.sqrt(1 - u*u) * Math.cos(theta);
-                            dy = Math.sqrt(1 - u*u) * Math.sin(theta);
-                            // dz = u;
-                            row.push([dx, dy, u]);
-                        }
-                        grid.push(row);
-                    }
-                    gradients.push(grid);
-                }
-                this.gradients = gradients;
-            };
-            this.seed(nx, ny, nz);
+            this.reseed = function() {
+                var p = new Array(256);
+                for (var i = 0; i < 256; i++) { p[i] = i; }
+                p = Shuffle(p);
+                this.p = p.concat(p);
+            }
+            this.reseed();
+
+            this.lerp = function(a, b, t) { return a + t*(b - a); };
+
+            // 2002 version
+            this.fade = function(t) { return t*t*t * (t * (6*t - 15) + 10); };
+            // Original version
+            // this.fade = function(t) { return 3*t*t - 2*t*t*t; };
+
+            this.grad = function(hash, x, y, z) {
+                var h = hash & 15;
+                var u = (h < 8) ? x : y;
+                var v = (h < 4) ? y : (h === 12 || h === 14) ? x : z;
+                return (((h&1) === 0) ? u : -u) + (((h&2) === 0) ? v : -v);
+            }
 
             this.noise = function(x, y, z) {
-                var self = this;
-                var lerp = function(a, b, t) { return a + t*(b - a); };
-                var getGradient = function(ix, iy, iz, x, y, z) {
-                    var dx = x - ix; var dy = y - iy; var dz = z - iz;
-                    try {
-                        var g = lerp(self.gradients[ix][iy][iz][0], self.gradients[ix+1][iy][iz][0], dx);
-
-                    } catch (e) {
-                        console.log(ix, iy, iz)
-                    }
-                    g +=    dy*self.gradients[ix][iy][iz][1];
-                    g +=    dz*self.gradients[ix][iy][iz][2];
-                    return g;
-                }
-                // 2002 version
-                var fade = function(t) { return t*t*t * (t * (6*t - 15) + 10); };
-                // Original version
-                // var fade = function(t) { return 3*t*t - 2*t*t*t; };
-
-                // x = x % self.gradients.length;
-                // y = y % self.gradients[0].length;
-                // z = z % self.gradients[0][0].length;
-                var x0 = Math.floor(x); var x1 = x0 + 1;
-                var y0 = Math.floor(y); var y1 = y0 + 1;
-                var z0 = Math.floor(z); var z1 = z0 + 1;
-
-                var sx = fade(x - x0); var sy = fade(y - y0); var sz = fade(z - z0);
-
-                var a0 = lerp(getGradient(x0, y0, z0, x, y, z), getGradient(x1, y0, z0, x, y, z), sx);
-                var a1 = lerp(getGradient(x0, y0, z1, x, y, z), getGradient(x1, y0, z1, x, y, z), sx);
-                var a = lerp(a0, a1, sy);
-
-                var b0 = lerp(getGradient(x0, y0, z0, x, y, z), getGradient(x0, y1, z0, x, y, z), sx);
-                var b1 = lerp(getGradient(x0, y0, z1, x, y, z), getGradient(x0, y1, z1, x, y, z), sx);
-                var b = lerp(b0, b1, sy);
-
-                return lerp(a, b, sz);
-            };
+                var X = Math.floor(x) & 255; var Y = Math.floor(y) & 255; var Z = Math.floor(z) & 255;
+                x -= Math.floor(x); y -= Math.floor(y); z -= Math.floor(z);
+                var u = this.fade(x); var v = this.fade(y); var w = this.fade(z);
+                var p = this.p; var g = this.grad; var l = this.lerp;
+                var A = p[X  ]+Y; var AA = p[A]+Z; var AB = p[A+1]+Z;
+                var B = p[X+1]+Y; var BA = p[B]+Z; var BB = p[B+1]+Z;
+                var a1 = g(p[AA  ], x  , y  , z  );
+                var a2 = g(p[BA  ], x-1, y  , z  );
+                var b1 = g(p[AB  ], x  , y-1, z  );
+                var b2 = g(p[BB  ], x-1, y-1, z  );
+                var c1 = g(p[AA+1], x  , y  , z-1);
+                var c2 = g(p[BA+1], x-1, y  , z-1);
+                var d1 = g(p[AB+1], x  , y-1, z-1);
+                var d2 = g(p[BB+1], x-1, y-1, z-1);
+                var a = l(a1, a2, u); var b = l(b1, b2, u);
+                var c = l(c1, c2, u); var d = l(d1, d2, u);
+                var m = l(a, b, v);   var n = l(c, d, v);
+                return l(m, n, w);
+            }
 
             this.noiseByte = function(x, y, z) {
-                return Math.floor(128 * (this.noise(x, y, z) + 1));
+                return Math.floor((256*this.noise(x, y, z) + 128));
             }
-        };
+
+            this.image = function(w, h, scale, offset) {
+                var canvas = $("<canvas>").attr({width: w, height: h})[0];
+                var ctx = canvas.getContext("2d");
+                var imgData = ctx.getImageData(0, 0, w, h);
+                var s = 1/scale;
+                var x, y, c, idx;
+                for (var j = 0; j < h; j++) {
+                    y = j*s;
+                    for (var i = 0; i < w; i++) {
+                        x = i*s;
+                        c = this.noiseByte(x, y, offset);
+                        idx = (i + j*w) * 4;
+                        imgData.data[idx]   = c;
+                        imgData.data[idx+1] = c;
+                        imgData.data[idx+2] = c;
+                        imgData.data[idx+3] = 255;
+                    }
+                }
+                ctx.putImageData(imgData, 0, 0);
+                return canvas;
+            }
+        }
 
         function GetTitleBitmap(w, h, fontSize, title, threshold) {
             var canvas = $("<canvas>").attr({width: w, height: h})[0];
@@ -165,40 +177,13 @@
             ctxOut.putImageData(src2, 0, 0);
 
             return canvasOut;
-        }
-
-        function DrawPerlin(p, t, w, h, scale) {
-            var s = scale;
-            t *= s;
-            var canvas = $("<canvas>").attr({width: w, height: h})[0];
-            var ctx = canvas.getContext("2d");
-            var imgData = ctx.getImageData(0, 0, w, h);
-            var J, idx, color;
-            for (var j = 0; j < h; j++) {
-                J = j*s;
-                for (var i = 0; i < w; i++) {
-                    idx = (i + j*w) * 4;
-                    color = p.noiseByte(i*s, J, t)
-                    imgData.data[idx] = color;
-                    imgData.data[idx+1] = color;
-                    imgData.data[idx+2] = color;
-                    imgData.data[idx+3] = 255;
-                }
-            }
-            ctx.putImageData(imgData, 0, 0);
-            return canvas;
-        }
+        };
 
         // Initialize Perlin Noise
-        var P = new Perlin(100, 100, 100);
-        // var values = new Array();
-        // for (var y = 0; y < 2; y += 0.1) {
-        //     for (var x = 0; x < 3; x += 0.1) {
-        //         values.push(P.noiseByte(x, y, 0));
-        //     }
-        // }
+        var P = new Perlin();
 
-        // var title = UpscaleCanvas(GetTitleBitmap(90, 20, 14, "GIFTASTIC", 128), 10);
+
+        var title = UpscaleCanvas(GetTitleBitmap(90, 20, 14, "GIFTASTIC", 128), 10);
 
         function DrawTitle(canvas, t) {
             var ctx = canvas.getContext("2d");
@@ -207,10 +192,8 @@
             // ctx.fillStyle = "#22ff87"; ctx.fillRect(100, 0, 20, 200);
             // ctx.fillStyle = "#18c1ff"; ctx.fillRect(120, 0, 20, 200);
             // ctx.fillStyle = "#8500fe"; ctx.fillRect(140, 0, 20, 200);
-            // ctx.drawImage(title, 0, 0);
-            var pNoise = DrawPerlin(P, t, 100, 100, 1);
-            // var pImg = UpscaleCanvas(pNoise, 10);
-            ctx.drawImage(pNoise, 0, 0);
+            ctx.drawImage(P.image(canvas.width, canvas.height, 80, t), 0, 0);
+            ctx.drawImage(title, 0, 0);
         }
 
 
@@ -224,9 +207,7 @@
             heroContext.clearRect(0, 0, heroCanvas.width, heroCanvas.height);
             DrawTitle(heroCanvas, t);
             t += 0.1;
-            // if (t < 100) {
-            //     requestAnimationFrame(DrawLoop);
-            // }
+            requestAnimationFrame(DrawLoop);
         };
         DrawLoop();
 
@@ -239,7 +220,7 @@
                 lastResize = Date.now();
                 // Update heroCanvas size
                 heroCanvas.width = heroCanvas.clientWidth;
-                // DrawTitle(heroCanvas);
+                DrawTitle(heroCanvas, t);
             }, resizeInterval);
             if (Date.now() - lastResize < resizeInterval) {
                 clearTimeout(resizeTimeout);
