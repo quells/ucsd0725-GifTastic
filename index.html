@@ -38,11 +38,16 @@
                             <button type="button" class="btn btn-purple">Go!</button>
                         </span>
                     </div>
-                    <div class="dropdown mb-3 mb-lg-0">
-                        <button type="button" class="btn btn-purple dropdown-toggle" id="savedSeachesButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            Saved Searches
-                        </button>
-                        <div class="dropdown-menu" id="savedSearches" aria-labelledby="savedSearchesButton"></div>
+                    <div class="row mb-3 mb-lg-0">
+                        <div class="dropdown mb-3 col-6 col-lg-12">
+                            <button type="button" class="btn btn-purple dropdown-toggle" id="savedSeachesButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Saved Searches
+                            </button>
+                            <div class="dropdown-menu" id="savedSearches" aria-labelledby="savedSearchesButton"></div>
+                        </div>
+                        <div class="col-6 col-lg-12 text-right text-lg-left">
+                            <button type="button" class="btn btn-secondary" id="toggle-animation">Stop Animation</button>
+                        </div>
                     </div>
                 </div>
                 <div class="col-lg-9">
@@ -74,6 +79,8 @@
         var heroCanvas, heroContext;
         var t, lastDrawTime;
         var lastResize, resizeTimeout, resizeInterval;
+        var stopAnimationFlag = false;
+        var targetFrameTime = 60; // 15 fps
 
         function UpdateTitle() {
             var windowWidth = $(window).width();
@@ -87,26 +94,37 @@
             if (windowWidth < 500) { fontsize = 14; }
             if (windowWidth < 400) { fontsize = 12; }
             if (windowWidth < 420) { fontsize = 11; }
-            title = UpscaleCanvas(GetTitleBitmap(90, 20, fontsize, 255, 0, "GIFTASTIC", 128), pixelSize);
+            title = GetTitleBitmap(90, heroCanvas.height/pixelSize, fontsize, 255, 0, "GIFTASTIC", 128);
         };
 
         function DrawHeader(canvas, t) {
-            var ctx = canvas.getContext("2d");
-            var pWidth = Math.floor(canvas.width/pixelSize);
-            var pHeight = Math.floor(canvas.height/pixelSize);
-            var pImg = P.colorImage(pWidth, pHeight, 80/pixelSize, t);
-            ctx.drawImage(UpscaleCanvas(pImg, pixelSize), 0, 0);
-            var titleX = Math.floor(Math.floor((canvas.width-title.width)*0.5)/pixelSize)*pixelSize;
-            ctx.drawImage(title, titleX, 0);
+            var miniWidth  = Math.floor(canvas.width/pixelSize);
+            var miniHeight = Math.floor(canvas.height/pixelSize);
+            var miniCanvas = $("<canvas>").attr({width: miniWidth, height: miniHeight})[0];
+            var miniCtx = miniCanvas.getContext("2d");
+
+            var lavalamp = P.colorImage(miniWidth, miniHeight, 80/pixelSize, t);
+            miniCtx.drawImage(lavalamp, 0, 0);
+
+            var titleX = Math.floor((miniWidth - title.width) * 0.5);
+            miniCtx.drawImage(title, titleX, 0);
+
+            var embiggened = UpscaleCanvas(miniCanvas, pixelSize);
+            canvas.getContext("2d").drawImage(embiggened, 0, 0);
         };
 
         function DrawLoop() {
             var delta = Date.now() - lastDrawTime;
-            heroContext.clearRect(0, 0, heroCanvas.width, heroCanvas.height);
-            DrawHeader(heroCanvas, t);
-            t += delta*0.0001;
-            lastDrawTime += delta;
-            requestAnimationFrame(DrawLoop);
+            if (delta > targetFrameTime) {
+                heroContext.clearRect(0, 0, heroCanvas.width, heroCanvas.height);
+                DrawHeader(heroCanvas, t);
+                t += delta*0.0001;
+                lastDrawTime += delta;
+            }
+
+            if (!stopAnimationFlag) {
+                requestAnimationFrame(DrawLoop);
+            }
         };
 
         $(document).ready(function() {
@@ -138,6 +156,17 @@
                 }, resizeInterval);
                 if (Date.now() - lastResize < resizeInterval) {
                     clearTimeout(resizeTimeout);
+                }
+            });
+
+            $("#toggle-animation").click(function() {
+                stopAnimationFlag = !stopAnimationFlag;
+                if (stopAnimationFlag) {
+                    $(this).text("Start Animation");
+                } else {
+                    $(this).text("Stop Animation");
+                    lastDrawTime = Date.now();
+                    DrawLoop();
                 }
             });
         });
