@@ -57,9 +57,22 @@
             canvas.getContext("2d").drawImage(embiggened, 0, 0);
         };
 
+        var drawTimeBuffer = new Array(20);
+        var drawTimeBufferIdx = 0;
         function DrawLoop() {
             var delta = Date.now() - lastDrawTime;
             if (delta > targetFrameTime) {
+                drawTimeBuffer[drawTimeBufferIdx++] = delta;
+                if (drawTimeBufferIdx >= drawTimeBuffer.length) {
+                    drawTimeBufferIdx = 0;
+                    var sum = 0;
+                    for (var i = 0; i < drawTimeBuffer.length; i++) {
+                        sum += drawTimeBuffer[i];
+                    }
+                    var avg = sum/drawTimeBuffer.length;
+                    console.log(avg);
+                }
+
                 heroContext.clearRect(0, 0, heroCanvas.width, heroCanvas.height);
                 DrawHeader(heroCanvas, t);
                 t += delta*0.0001;
