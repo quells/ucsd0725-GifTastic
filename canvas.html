@@ -13,6 +13,7 @@
             <canvas id="hero-canvas">
                 GifTastic
             </canvas>
+            <button type="button" class="btn btn-secondary" id="toggle-animation">Stop Animation</button>
         </div>
 
     <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha384-xBuQ/xzmlsLoJpyjoggmTEz8OWUFM0/RC5BsqQBDX2v5cMvDHcMakNTNrHIW2I5f" crossorigin="anonymous"></script>
@@ -24,7 +25,7 @@
         var t, lastDrawTime;
         var lastResize, resizeTimeout, resizeInterval;
         var stopAnimationFlag = false;
-        var targetFrameTime = 60;
+        var targetFrameTime = 60; // 15 fps
 
         function UpdateTitle() {
             var windowWidth = $(window).width();
@@ -57,6 +58,7 @@
             canvas.getContext("2d").drawImage(embiggened, 0, 0);
         };
 
+        // Draw Time Debugging Apparatus
         var drawTimeBuffer = new Array(20);
         var drawTimeBufferIdx = 0;
         function DrawLoop() {
@@ -113,6 +115,17 @@
                 }, resizeInterval);
                 if (Date.now() - lastResize < resizeInterval) {
                     clearTimeout(resizeTimeout);
+                }
+            });
+
+            $("#toggle-animation").click(function() {
+                stopAnimationFlag = !stopAnimationFlag;
+                if (stopAnimationFlag) {
+                    $(this).text("Start Animation");
+                } else {
+                    $(this).text("Stop Animation");
+                    lastDrawTime = Date.now();
+                    DrawLoop();
                 }
             });
         });
