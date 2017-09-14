@@ -23,6 +23,8 @@
         var heroCanvas, heroContext;
         var t, lastDrawTime;
         var lastResize, resizeTimeout, resizeInterval;
+        var stopAnimationFlag = false;
+        var targetFrameTime = 60;
 
         function UpdateTitle() {
             var windowWidth = $(window).width();
@@ -44,24 +46,29 @@
             var miniHeight = Math.floor(canvas.height/pixelSize);
             var miniCanvas = $("<canvas>").attr({width: miniWidth, height: miniHeight})[0];
             var miniCtx = miniCanvas.getContext("2d");
-            
+
             var lavalamp = P.colorImage(miniWidth, miniHeight, 80/pixelSize, t);
             miniCtx.drawImage(lavalamp, 0, 0);
-            
+
             var titleX = Math.floor((miniWidth - title.width) * 0.5);
             miniCtx.drawImage(title, titleX, 0);
-            
+
             var embiggened = UpscaleCanvas(miniCanvas, pixelSize);
             canvas.getContext("2d").drawImage(embiggened, 0, 0);
         };
 
         function DrawLoop() {
             var delta = Date.now() - lastDrawTime;
-            heroContext.clearRect(0, 0, heroCanvas.width, heroCanvas.height);
-            DrawHeader(heroCanvas, t);
-            t += delta*0.0001;
-            lastDrawTime += delta;
-            requestAnimationFrame(DrawLoop);
+            if (delta > targetFrameTime) {
+                heroContext.clearRect(0, 0, heroCanvas.width, heroCanvas.height);
+                DrawHeader(heroCanvas, t);
+                t += delta*0.0001;
+                lastDrawTime += delta;
+            }
+
+            if (!stopAnimationFlag) {
+                requestAnimationFrame(DrawLoop);
+            }
         };
 
         $(document).ready(function() {
