@@ -11,7 +11,7 @@
     <body>
         <div class="container-fluid">
             <canvas id="hero-canvas" class="mb-3">
-                GifTastic
+                <h1>GifTastic</h1>
             </canvas>
 
             <div class="modal fade" id="originalModal" tabindex="-1" role="presentation" aria-hidden="true">
@@ -73,8 +73,7 @@
     <script src="assets/js/perlin.js" charset="utf-8"></script>
     <script src="assets/js/bitmaps.js" charset="utf-8"></script>
     <script type="text/javascript">
-        var app = new App($("#searchBar"), $("#savedSearches"), $("#results"));
-
+        var app;
         var P, title, pixelSize;
         var heroCanvas, heroContext;
         var t, lastDrawTime;
@@ -128,8 +127,9 @@
         };
 
         $(document).ready(function() {
+            app = new App($("#searchBar"), $("#savedSearches"), $("#results"));
+
             P = new Perlin();
-            title;
             pixelSize = 10;
 
             heroCanvas = $("#hero-canvas")[0];
