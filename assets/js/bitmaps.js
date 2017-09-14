@@ -33,9 +33,12 @@ function GetTitleBitmap(w, h, fontSize, fgcolor, bgcolor, title, threshold) {
 function UpscaleCanvas(canvasIn, scale) {
     var ctxIn = canvasIn.getContext("2d");
 
+    var canvasOut = $("<canvas>").attr({width: canvasIn.width*scale, height: canvasIn.height*scale})[0];
+    var ctxOut = canvasOut.getContext("2d");
+    ctxOut.drawImage(canvasIn, 0, 0, canvasOut.width, canvasOut.height);
+
     var src = ctxIn.getImageData(0, 0, canvasIn.width, canvasIn.height);
-    var dest = {width: canvasIn.width*scale, height: canvasIn.height*scale};
-    dest.data = new Array(dest.width * dest.height * 4);
+    var dest = ctxOut.getImageData(0, 0, canvasOut.width, canvasOut.height);
 
     var idx1, idx2, x, y, oy;
     for (var j = 0; j < canvasIn.height; j++) {
@@ -56,22 +59,6 @@ function UpscaleCanvas(canvasIn, scale) {
         }
     }
 
-    var canvasOut = $("<canvas>").attr({width: dest.width, height: dest.height})[0];
-    var ctxOut = canvasOut.getContext("2d");
-
-    ctxOut.drawImage(canvasIn, 0, 0);
-    var src2 = ctxOut.getImageData(0, 0, dest.width, dest.height);
-    var idx;
-    for (var j = 0; j < dest.height; j++) {
-        for (var i = 0; i < dest.width; i++) {
-            idx = (i + j*dest.width) * 4;
-            src2.data[idx] = dest.data[idx];
-            src2.data[idx+1] = dest.data[idx+1];
-            src2.data[idx+2] = dest.data[idx+2];
-            src2.data[idx+3] = dest.data[idx+3];
-        }
-    }
-    ctxOut.putImageData(src2, 0, 0);
-
+    ctxOut.putImageData(dest, 0, 0);
     return canvasOut;
 };
