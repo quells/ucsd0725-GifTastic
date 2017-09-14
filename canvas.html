@@ -32,11 +32,11 @@
             if (windowWidth < 900) { fontsize = 12; }
             if (windowWidth < 750) { fontsize = 10; }
             if (windowWidth < 650) { fontsize = 9; }
-            if (windowWidth < 600) { fontsize = 8; }
-            if (windowWidth < 500) { fontsize = 14; pixelSize = 5; heroCanvas.height = 100; }
+            if (windowWidth < 600) { fontsize = 16; pixelSize = 5; heroCanvas.height = 100; }
+            if (windowWidth < 500) { fontsize = 14; }
             if (windowWidth < 400) { fontsize = 12; }
             if (windowWidth < 420) { fontsize = 11; }
-            title = UpscaleCanvas(GetTitleBitmap(90, 20, fontsize, 255, "GIFTASTIC", 128), pixelSize);
+            title = UpscaleCanvas(GetTitleBitmap(90, 20, fontsize, 255, 0, "GIFTASTIC", 128), pixelSize);
         };
 
         function DrawHeader(canvas, t) {

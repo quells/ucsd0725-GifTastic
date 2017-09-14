@@ -1,4 +1,4 @@
-function GetTitleBitmap(w, h, fontSize, color, title, threshold) {
+function GetTitleBitmap(w, h, fontSize, fgcolor, bgcolor, title, threshold) {
     var canvas = $("<canvas>").attr({width: w, height: h})[0];
     var ctx = canvas.getContext("2d");
 
@@ -8,17 +8,25 @@ function GetTitleBitmap(w, h, fontSize, color, title, threshold) {
     ctx.fillText(title, w/2, Math.floor(h/2 + fontSize*2/5));
 
     var imgData = ctx.getImageData(0, 0, w, h);
+    var outData = ctx.getImageData(0, 0, w, h);
     for (var i = 0; i < imgData.data.length; i += 4) {
-        imgData.data[i] = color;
-        imgData.data[i+1] = color;
-        imgData.data[i+2] = color;
         if (imgData.data[i+3] > threshold) {
-            imgData.data[i+3] = 255;
+            outData.data[i] = fgcolor;
+            outData.data[i+1] = fgcolor;
+            outData.data[i+2] = fgcolor;
+            outData.data[i+3] = 255;
         } else {
-            imgData.data[i+3] = 0;
+            if (imgData.data[i-1-4*w] > threshold) {
+                outData.data[i] = bgcolor;
+                outData.data[i+1] = bgcolor;
+                outData.data[i+2] = bgcolor;
+                outData.data[i+3] = 255;
+            } else {
+                outData.data[i+3] = 0;
+            }
         }
     }
-    ctx.putImageData(imgData, 0, 0);
+    ctx.putImageData(outData, 0, 0);
     return canvas;
 };
 
